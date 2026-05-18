@@ -389,26 +389,27 @@ with gr.Blocks(theme=gr.themes.Base(), css=css, title="BiasLens") as demo:
     with gr.Row(equal_height=False):
 
         with gr.Column(scale=1, elem_id="input-col"):
-            with gr.Tab("Text"):
-                input_text = gr.Textbox(
-                    label="",
-                    lines=6,
-                    placeholder="Paste an article excerpt, headline, social media post, or any text…",
-                    show_label=False,
-                )
-                input_url = gr.Textbox(
-                    label="",
-                    placeholder="Or fetch from a URL — https://example.com/article",
-                    show_label=False,
-                )
+            with gr.Tabs():
+                with gr.Tab("Text"):
+                    input_text = gr.Textbox(
+                        label="",
+                        lines=6,
+                        placeholder="Paste an article excerpt, headline, social media post, or any text…",
+                        show_label=False,
+                    )
+                    input_url = gr.Textbox(
+                        label="",
+                        placeholder="Or fetch from a URL — https://example.com/article",
+                        show_label=False,
+                    )
 
-            with gr.Tab("Image"):
-                input_image = gr.Image(
-                    type="pil",
-                    label="",
-                    sources=["upload"],
-                    show_label=False,
-                )
+                with gr.Tab("Image"):
+                    input_image = gr.Image(
+                        type="pil",
+                        label="",
+                        sources=["upload"],
+                        show_label=False,
+                    )
 
             analyze_btn = gr.Button("Analyze", elem_id="analyze-btn", size="lg")
 
