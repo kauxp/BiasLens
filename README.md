@@ -1,15 +1,14 @@
 ---
-title: {{title}}
-emoji: {{emoji}}
-colorFrom: {{colorFrom}}
-colorTo: {{colorTo}}
-sdk: {{sdk}}
-sdk_version: "{{sdkVersion}}"
-{{#pythonVersion}}
-python_version: "{{pythonVersion}}"
-{{/pythonVersion}}
+title: BiasLens
+emoji: 🔍
+colorFrom: purple
+colorTo: indigo
+sdk: gradio
+sdk_version: 4.20.0
+python_version: "3.10"
 app_file: app.py
 pinned: false
+short_description: Detect cognitive, linguistic & structural bias in text, URLs, and images
 ---
 
 # BiasLens
