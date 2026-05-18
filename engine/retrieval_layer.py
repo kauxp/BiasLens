@@ -12,7 +12,7 @@ class EvidenceRetriever:
     
     def __init__(self, model_name="BAAI/bge-base-en-v1.5", embedding_dim=768):
         # Initialize Embedding Model
-        self.encoder = SentenceTransformer(model_name, local_files_only=True)
+        self.encoder = SentenceTransformer(model_name)
         self.embedding_dim = embedding_dim
         
         # Load Precomputed FAISS Index and Metadata

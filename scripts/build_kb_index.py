@@ -10,7 +10,7 @@ def build_offline_index():
     # 1. Load the embedding model
     model_name = "BAAI/bge-base-en-v1.5"
     print(f"Loading SentenceTransformer: {model_name}")
-    encoder = SentenceTransformer(model_name, local_files_only=True)
+    encoder = SentenceTransformer(model_name)
     embedding_dim = 768
     
     # 2. Define the baseline Knowledge Base
