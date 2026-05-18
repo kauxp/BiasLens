@@ -8,7 +8,7 @@ sdk_version: 4.20.0
 python_version: "3.10"
 app_file: app.py
 pinned: false
-short_description: Detect cognitive, linguistic & structural bias in text, URLs, and images
+short_description: Detect bias in text and images
 ---
 
 # BiasLens
