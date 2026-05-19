@@ -1,4 +1,5 @@
 import gradio as gr
+from PIL import Image as PILImage
 from engine.input_layer import InputProcessor
 from engine.retrieval_layer import get_retriever
 from engine.reasoning_layer import BiasReasoningEngine
@@ -13,7 +14,8 @@ reasoning_engine = BiasReasoningEngine()
 
 def process_analysis(text: str, url: str, image) -> tuple[str, str]:
     try:
-        context = InputProcessor.build_unified_context(text, url, image)
+        pil_image = PILImage.open(image) if isinstance(image, str) else image
+        context = InputProcessor.build_unified_context(text, url, pil_image)
         warnings_html = format_warnings_html(context.get("warnings", []))
 
         if not context["has_text"] and not context["has_image"]:
@@ -405,7 +407,7 @@ with gr.Blocks(theme=gr.themes.Base(), css=css, title="BiasLens") as demo:
 
                 with gr.Tab("Image"):
                     input_image = gr.Image(
-                        type="pil",
+                        type="filepath",
                         label="",
                         sources=["upload"],
                         show_label=False,
