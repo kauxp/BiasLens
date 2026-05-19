@@ -13,6 +13,8 @@ short_description: Detect bias in text and images
 
 # BiasLens
 
+[![Live Demo](https://img.shields.io/badge/🔍%20Live%20Demo-BiasLens-4f46e5?style=for-the-badge)](https://kauxp-biaslens.hf.space/)
+
 Detect cognitive, linguistic, and structural bias in text, URLs, and images.
 Powered by **Gemma** (text) + **PaliGemma** (vision) + **FAISS RAG** — no API key required.
 
