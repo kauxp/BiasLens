@@ -434,6 +434,7 @@ with gr.Blocks(theme=gr.themes.Base(), css=css, title="BiasLens") as demo:
         fn=process_analysis,
         inputs=[input_text, input_url, input_image],
         outputs=[output_html, output_json],
+        api_name=False,
     )
 
 if __name__ == "__main__":
