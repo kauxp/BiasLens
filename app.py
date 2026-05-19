@@ -426,7 +426,7 @@ with gr.Blocks(theme=gr.themes.Base(), css=css, title="BiasLens") as demo:
             output_html = gr.HTML(value=PLACEHOLDER_HTML)
 
             with gr.Accordion("JSON Output", open=False):
-                output_json = gr.Code(language="json", show_label=False)
+                output_json = gr.Textbox(show_label=False, lines=20, max_lines=40)
 
     analyze_btn.click(
         fn=process_analysis,
