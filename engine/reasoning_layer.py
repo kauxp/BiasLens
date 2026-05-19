@@ -2,7 +2,9 @@ import os
 import json
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoModelForVision2Seq
+from huggingface_hub import login
 
+login(token=os.getenv("bias_deployment"))
 class BiasReasoningEngine:
     """
     Multimodal Bias Reasoning Engine powered by Gemma.
