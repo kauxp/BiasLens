@@ -4,37 +4,36 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, AutoProcessor, AutoModelForVision2Seq
 from huggingface_hub import login
 
-login(token=os.getenv("bias_deployment"))
+login(token=os.getenv("HF_TOKEN") or os.getenv("bias_deployment"))
 class BiasReasoningEngine:
     """
     Multimodal Bias Reasoning Engine powered by Gemma.
     Analyzes fused context (Text + Image + URL + Retrieved Evidence) to detect bias.
     """
-    
+
     def __init__(self, text_model_id="google/gemma-2b-it", vision_model_id="google/paligemma-3b-mix-224"):
         # Replace with 'google/gemma-4-it' and 'google/gemma-4-multimodal-it' when available.
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
         try:
-            # For a free HF Space, we load in lower precision if on GPU
-            torch_dtype = torch.float16 if self.device == "cuda" else torch.float32
-            
             print(f"Loading Text Model {text_model_id} on {self.device}...")
             self.tokenizer = AutoTokenizer.from_pretrained(text_model_id)
             self.text_model = AutoModelForCausalLM.from_pretrained(
                 text_model_id,
-                torch_dtype=torch_dtype,
-                low_cpu_mem_usage=True
-            ).to(self.device)
+                torch_dtype=torch.float16,
+                device_map="auto",
+                low_cpu_mem_usage=True,
+            )
 
             print(f"Loading Vision Model {vision_model_id} on {self.device}...")
             self.processor = AutoProcessor.from_pretrained(vision_model_id)
             self.vision_model = AutoModelForVision2Seq.from_pretrained(
                 vision_model_id,
-                torch_dtype=torch_dtype,
-                low_cpu_mem_usage=True
-            ).to(self.device)
-            
+                torch_dtype=torch.float16,
+                device_map="auto",
+                low_cpu_mem_usage=True,
+            )
+
             self.is_loaded = True
         except Exception as e:
             print(f"Failed to load model: {e}")
@@ -179,7 +178,7 @@ JSON schema:
 
                 input_len = inputs["input_ids"].shape[-1]
                 with torch.no_grad():
-                    generated_ids = self.vision_model.generate(**inputs, max_new_tokens=512)
+                    generated_ids = self.vision_model.generate(**inputs, max_new_tokens=256)
                 generated_ids = generated_ids[:, input_len:]
                 generated_text = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
             else:
@@ -190,7 +189,7 @@ JSON schema:
 
                 input_len = inputs["input_ids"].shape[-1]
                 with torch.no_grad():
-                    generated_ids = self.text_model.generate(**inputs, max_new_tokens=512)
+                    generated_ids = self.text_model.generate(**inputs, max_new_tokens=256)
                 generated_ids = generated_ids[:, input_len:]
                 generated_text = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
 
