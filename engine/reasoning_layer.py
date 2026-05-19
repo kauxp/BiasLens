@@ -92,16 +92,72 @@ JSON schema:
 """
         return prompt
 
+    def _canonical_error(self, error_msg: str, mode: str = "error") -> dict:
+        """Returns a fully-populated schema dict for error/degraded states."""
+        return {
+            "input_type": "unknown",
+            "target_group": "none",
+            "is_bias": False,
+            "bias_score": 0.0,
+            "bias_dimensions": {},
+            "biased_phrases": [],
+            "reasoning": "",
+            "evidence": [],
+            "confidence": 0.0,
+            "neutral_rewrite": "",
+            "mode": mode,
+            "error": error_msg,
+        }
+
+    def _normalize_report(self, report: dict) -> dict:
+        """Fills missing keys with canonical defaults and coerces types."""
+        defaults = {
+            "input_type": "unknown",
+            "target_group": "none",
+            "is_bias": False,
+            "bias_score": 0.0,
+            "bias_dimensions": {},
+            "biased_phrases": [],
+            "reasoning": "",
+            "evidence": [],
+            "confidence": 0.0,
+            "neutral_rewrite": "",
+            "mode": "offline",
+        }
+        # Migrate legacy field names that the model may still emit
+        if "retrieved_evidence" in report and "evidence" not in report:
+            report["evidence"] = report.pop("retrieved_evidence")
+        if "bias_types" in report and "bias_dimensions" not in report:
+            report["bias_dimensions"] = {
+                t.lower().replace(" ", "_") + "_bias": 0.5
+                for t in report.pop("bias_types")
+            }
+        result = {**defaults, **report}
+        # Coerce critical fields to their expected types
+        if not isinstance(result["bias_dimensions"], dict):
+            result["bias_dimensions"] = {}
+        if not isinstance(result["biased_phrases"], list):
+            result["biased_phrases"] = []
+        if not isinstance(result["evidence"], list):
+            result["evidence"] = []
+        for numeric_key in ("bias_score", "confidence"):
+            if not isinstance(result[numeric_key], (int, float)):
+                try:
+                    result[numeric_key] = float(result[numeric_key])
+                except (ValueError, TypeError):
+                    result[numeric_key] = 0.0
+        return result
+
     def analyze(self, unified_context: dict, retrieved_evidence: list[str]) -> dict:
         """
         Runs the full multimodal reasoning pipeline.
-        
+
         [LITERT PLACEHOLDER]:
-        In a mobile/edge deployment, this method would interface with a 
+        In a mobile/edge deployment, this method would interface with a
         tflite runtime (e.g. interpreter = tf.lite.Interpreter(model_path)).
         Tensors would be quantized to INT8.
         """
-        
+
         prompt = self._build_context_fusion_prompt(unified_context, retrieved_evidence)
         image = unified_context.get('image')
 
@@ -118,7 +174,7 @@ JSON schema:
                     text=prompt,
                     return_tensors="pt"
                 ).to(self.device)
-                
+
                 input_len = inputs["input_ids"].shape[-1]
                 with torch.no_grad():
                     generated_ids = self.vision_model.generate(**inputs, max_new_tokens=512)
@@ -129,18 +185,18 @@ JSON schema:
                     prompt,
                     return_tensors="pt"
                 ).to(self.device)
-                
+
                 input_len = inputs["input_ids"].shape[-1]
                 with torch.no_grad():
                     generated_ids = self.text_model.generate(**inputs, max_new_tokens=512)
                 generated_ids = generated_ids[:, input_len:]
                 generated_text = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
-            
-            # Extract JSON block
-            return self._parse_json(generated_text)
-            
+
+            # Extract and normalise JSON block
+            return self._normalize_report(self._parse_json(generated_text))
+
         except Exception as e:
-            return {"error": f"Inference failed: {str(e)}"}
+            return self._canonical_error(f"Inference failed: {str(e)}")
 
     def _parse_json(self, text: str) -> dict:
         """Extracts JSON from the model's raw text output."""
@@ -162,24 +218,41 @@ JSON schema:
                         return json.loads(json_str)
                     except json.JSONDecodeError:
                         end = text.rfind('}', start, end)
-            
-            return {"error": "Could not parse JSON", "raw": text}
+
+            return self._canonical_error("Could not parse model output as JSON")
         except Exception as e:
-            return {"error": f"JSON parsing error: {str(e)}", "raw": text}
+            return self._canonical_error(f"JSON parsing error: {str(e)}")
 
     def _mock_response(self, context: dict) -> dict:
         """Returns a polished mock response for UI testing."""
+        input_type = (
+            "mixed" if context.get("has_image") and context.get("has_text")
+            else ("image" if context.get("has_image") else "text")
+        )
         return {
-            "input_type": "mixed" if context.get("has_image") and context.get("has_text") else ("image" if context.get("has_image") else "text"),
+            "input_type": input_type,
             "target_group": "Unspecified Group",
             "is_bias": True,
-            "bias_types": ["Stereotyping", "Emotional Manipulation"],
             "bias_score": 0.75,
-            "retrieved_evidence": [
+            "bias_dimensions": {
+                "political_bias": 0.6,
+                "racial_bias": 0.5,
+                "gender_bias": 0.3,
+            },
+            "biased_phrases": ["always barbaric", "invading forces"],
+            "reasoning": (
+                "The input utilizes loaded language intended to elicit an emotional response "
+                "rather than presenting objective facts. It generalizes the behavior of an "
+                "entire group based on the actions of a few, which is a hallmark of stereotyping."
+            ),
+            "evidence": [
                 "Political framing often uses loaded words.",
-                "Generalizations observed in the input text."
+                "Generalizations observed in the input text.",
             ],
-            "reasoning": "The input utilizes loaded language intended to elicit an emotional response rather than presenting objective facts. It generalizes the behavior of an entire group based on the actions of a few, which is a hallmark of stereotyping.",
             "confidence": 0.88,
-            "mode": "offline (mock)"
+            "neutral_rewrite": (
+                "Forces from that country have been reported to engage in actions "
+                "that violate international norms."
+            ),
+            "mode": "offline (mock)",
         }
