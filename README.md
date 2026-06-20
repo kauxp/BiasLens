@@ -1,13 +1,7 @@
 ---
 title: BiasLens
-emoji: 🔍
-colorFrom: purple
-colorTo: indigo
-sdk: gradio
-sdk_version: 5.9.0
 python_version: "3.10"
 app_file: app.py
-pinned: false
 short_description: Detect bias in text and images
 ---
 
